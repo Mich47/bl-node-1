@@ -35,7 +35,7 @@ const createFile = (fileName, content) => {
   fsPromises
     .writeFile(path.join(__dirname, "./files", fileName), content, "utf8")
     .then(() => {
-      console.log(chalk.green(`File "${fileName}" created succesfully`));
+      console.log(chalk.green(`File "${fileName}" created successfully`));
     })
     .catch((err) => {
       console.log(chalk.red(err));
