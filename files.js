@@ -4,14 +4,14 @@ const chalk = require("chalk");
 const dataValidator = require("./helpers/dataValidator");
 const checkExtention = require("./helpers/checkExtention");
 
-const createFile = (fileName, content) => {
+const createFile = async (fileName, content) => {
   const data = {
     fileName,
     content,
   };
 
   const result = dataValidator(data);
-  //   console.log("result ", result);
+
   if (result.error) {
     console.log(
       chalk.red(
@@ -32,51 +32,58 @@ const createFile = (fileName, content) => {
     return;
   }
 
-  fsPromises
-    .writeFile(path.join(__dirname, "./files", fileName), content, "utf8")
-    .then(() => {
-      console.log(chalk.green(`File "${fileName}" created successfully`));
-    })
-    .catch((err) => {
-      console.log(chalk.red(err));
-    });
+  const filePath = path.join(__dirname, "./files", fileName);
+
+  try {
+    await fsPromises.writeFile(filePath, content, "utf8");
+
+    console.log(chalk.green(`File "${fileName}" created successfully`));
+  } catch (error) {
+    console.log(chalk.red(error));
+  }
 };
 
-const getFiles = () => {
-  fsPromises
-    .readdir(path.join(__dirname, "./files"))
-    .then((data) => {
-      if (!data.length) {
-        console.log(chalk.red("There are no files in this directory"));
-      }
-      data.forEach((file) => console.log(chalk.blueBright(file)));
-    })
-    .catch((err) => {
-      console.log(chalk.red(err));
-    });
+const getFiles = async () => {
+  try {
+    const data = await fsPromises.readdir(path.join(__dirname, "./files"));
+
+    if (!data.length) {
+      console.log(chalk.red("There are no files in this directory"));
+      return;
+    }
+
+    data.forEach((file) => console.log(chalk.blueBright(file)));
+  } catch (error) {
+    console.log(chalk.red(error));
+  }
 };
 
-const getFile = (file) => {
-  fsPromises.readdir(path.join(__dirname, "./files")).then((data) => {
+const getFile = async (file) => {
+  const dirPath = path.join(__dirname, "./files");
+  const filePath = path.join(__dirname, "./files", file);
+
+  try {
+    const data = await fsPromises.readdir(dirPath);
+
     if (!data.includes(file)) {
       console.log(chalk.red(`The file "${file}" wasn't found`));
       return;
     }
-    fsPromises
-      .readFile(path.join(__dirname, "./files", file), "utf8")
-      .then((text) => {
-        fsPromises.stat(path.join(__dirname, "./files", file)).then((data) => {
-          console.log({
-            message: "Success",
-            fileName: file,
-            content: text,
-            extention: checkExtention(file).extention,
-            size: data.size,
-            data: data.birthtime.toString(),
-          });
-        });
-      });
-  });
+
+    const content = await fsPromises.readFile(filePath, "utf8");
+    const fileDetails = await fsPromises.stat(filePath);
+
+    console.log({
+      message: "Success",
+      fileName: file,
+      content,
+      extention: checkExtention(file).extention,
+      size: `${fileDetails.size} bytes`,
+      date: fileDetails.birthtime.toString(),
+    });
+  } catch (error) {
+    console.log(chalk.red(error));
+  }
 };
 
 module.exports = { createFile, getFiles, getFile };
